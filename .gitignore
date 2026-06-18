@@ -12,7 +12,7 @@ build/
 .env.*.local
 
 # Prisma generated client
-flowtrack-backend/src/prisma/client/
+flowtrack-backend/src/generated/
 
 # Logs
 *.log
