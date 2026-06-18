@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+flowtrack-backend/node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Prisma generated client
+flowtrack-backend/src/prisma/client/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
