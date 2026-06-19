@@ -6,7 +6,11 @@ import prisma from '../lib/prisma.js';
 const RegisterSchema = z.object({
   email: z.email(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().optional(),
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must be at most 50 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens and apostrophes'),
 });
 
 const LoginSchema = z.object({

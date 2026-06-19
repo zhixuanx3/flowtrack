@@ -1,69 +1,100 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { login } from '../api/auth';
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import logo from "../assets/logo.svg";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { login } from "../api/auth";
+import { loginSchema, type LoginFormData } from "../schemas/auth.schema";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
+
+  const onSubmit = async (data: LoginFormData) => {
+    setServerError("");
     try {
-      const { token } = await login(email, password);
-      localStorage.setItem('token', token);
-      navigate('/dashboard');
+      const { token } = await login(data.email, data.password);
+      localStorage.setItem("token", token);
+      navigate("/dashboard");
     } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      setServerError((err as Error).message);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-6">Login</h1>
+    <div className="bg-primary-light">
+      <div className="w-fit flex flex-col bg-background pt-2 pb-10 px-30 items-center justify-center min-h-screen mx-auto shadow-card text-center">
+        <div className="flex gap-3 items-center my-8">
+          <img src={logo} alt="FlowTrack" className="w-10" />
+          <div className="text-primary text-2xl font-bold">FlowTrack</div>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+        <div>
+          <div className="text-xl font-semibold">Welcome back</div>
+          <div>Sign in to your account</div>
+        </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="w-full flex flex-col my-6 text-left"
+        >
+          <div>
+            <label>Email</label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              {...register("email")}
+              className="w-full border border-line rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <p className="text-error text-xs h-4">{errors.email?.message}</p>
+          </div>
+
+          <div>
+            <label>Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                {...register("password")}
+                className="w-full border border-line rounded-lg px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground cursor-pointer"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <p className="text-error text-xs h-4">{errors.password?.message}</p>
+          </div>
+
+          {serverError && (
+            <p className="text-error text-sm h-4 mb-2">{serverError}</p>
+          )}
 
           <button
             type="submit"
-            disabled={loading}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition disabled:opacity-50"
+            disabled={isSubmitting}
+            className="bg-primary hover:bg-primary-hover text-white text-sm font-medium py-2 rounded-lg transition disabled:opacity-50 cursor-pointer mt-2"
           >
-            {loading ? 'Logging in…' : 'Login'}
+            {isSubmitting ? "Logging in…" : "Login"}
           </button>
         </form>
 
-        <p className="text-sm text-gray-500 mt-4">
-          No account?{' '}
-          <Link to="/register" className="text-indigo-600 hover:underline">
+        <div>
+          Don't have an account?{" "}
+          <Link to="/register" className="text-primary font-medium">
             Register
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
