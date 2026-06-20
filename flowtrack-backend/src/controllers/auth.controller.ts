@@ -1,29 +1,64 @@
 import type { Request, Response } from 'express';
 import { ZodError } from 'zod';
 import * as authService from '../services/auth.service.js';
+import { sendSuccess, sendError } from '../utils/response.js';
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+const handleError = (err: unknown, res: Response, code = 400) => {
+  if (err instanceof ZodError) {
+    sendError(res, err.issues[0]?.message ?? 'Validation error', 400);
+    return;
+  }
+  sendError(res, (err as Error).message, code);
+};
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const user = await authService.register(req.body);
-    res.status(201).json({ user });
+    await authService.register(req.body);
+    sendSuccess(res, 'Account created successfully', null, 201);
   } catch (err) {
-    if (err instanceof ZodError) {
-      res.status(400).json({ error: err.issues[0]?.message });
-      return;
-    }
-    res.status(400).json({ error: (err as Error).message });
+    handleError(err, res);
   }
 };
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const result = await authService.login(req.body);
-    res.json(result);
+    const { accessToken, refreshToken, user } = await authService.login(req.body);
+    res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+    sendSuccess(res, 'Login successful', { accessToken, user });
   } catch (err) {
-    if (err instanceof ZodError) {
-      res.status(400).json({ error: err.issues[0]?.message });
+    handleError(err, res, 401);
+  }
+};
+
+export const refresh = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.refreshToken as string | undefined;
+    if (!token) {
+      sendError(res, 'No refresh token', 401);
       return;
     }
-    res.status(401).json({ error: (err as Error).message });
+    const { accessToken, refreshToken } = await authService.refresh(token);
+    res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+    sendSuccess(res, 'Token refreshed', { accessToken });
+  } catch (err) {
+    handleError(err, res, 401);
+  }
+};
+
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.refreshToken as string | undefined;
+    if (token) await authService.logout(token);
+    res.clearCookie('refreshToken');
+    sendSuccess(res, 'Logged out successfully', null);
+  } catch (err) {
+    handleError(err, res);
   }
 };

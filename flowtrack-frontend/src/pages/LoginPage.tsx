@@ -4,11 +4,14 @@ import logo from "../assets/logo.svg";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useDispatch } from "react-redux";
 import { login } from "../api/auth";
+import { setCredentials } from "../store/authSlice";
 import { loginSchema, type LoginFormData } from "../schemas/auth.schema";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -21,8 +24,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setServerError("");
     try {
-      const { token } = await login(data.email, data.password);
-      localStorage.setItem("token", token);
+      const { data: authData } = await login(data.email, data.password);
+      dispatch(setCredentials({ accessToken: authData.accessToken, user: authData.user }));
       navigate("/dashboard");
     } catch (err) {
       setServerError((err as Error).message);

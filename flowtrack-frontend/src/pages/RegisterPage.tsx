@@ -21,9 +21,8 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setServerError("");
     try {
-      const { token } = await register(data.email, data.password, data.name);
-      localStorage.setItem("token", token);
-      navigate("/dashboard");
+      await register(data.email, data.password, data.name);
+      navigate("/");
     } catch (err) {
       setServerError((err as Error).message);
     }

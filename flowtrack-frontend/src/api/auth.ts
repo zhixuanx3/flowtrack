@@ -1,12 +1,16 @@
 import api from './axios';
+import type { ApiResponse } from '../types/api';
 
-export interface AuthResponse {
-  token: string;
-  user: { id: string; email: string; name: string | null };
+export interface AuthData {
+  accessToken: string;
+  user: { id: string; email: string; name: string };
 }
 
 export const login = (email: string, password: string) =>
-  api.post<AuthResponse>('/auth/login', { email, password }).then(r => r.data);
+  api.post<ApiResponse<AuthData>>('/auth/login', { email, password }).then(r => r.data);
 
 export const register = (email: string, password: string, name?: string) =>
-  api.post<AuthResponse>('/auth/register', { email, password, name }).then(r => r.data);
+  api.post<ApiResponse>('/auth/register', { email, password, name }).then(r => r.data);
+
+export const logout = () =>
+  api.post<ApiResponse>('/auth/logout').then(r => r.data);
