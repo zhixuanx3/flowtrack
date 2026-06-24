@@ -104,3 +104,12 @@ export const logout = async (token: string) => {
   await prisma.refreshToken.deleteMany({ where: { token } });
   return { message: "Logged out successfully" };
 };
+
+export const getProfile = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true },
+  });
+  if (!user) throw new Error("User not found");
+  return user;
+};
