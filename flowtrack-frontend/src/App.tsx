@@ -11,6 +11,18 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import OrganizationPage from "./pages/organization/OrganizationPage";
 
+let refreshPromise: Promise<string | null> | null = null;
+
+function getRefreshPromise() {
+  if (!refreshPromise) {
+    refreshPromise = api
+      .post<ApiResponse<{ accessToken: string }>>("/auth/refresh")
+      .then(({ data }) => data.data.accessToken)
+      .catch(() => null);
+  }
+  return refreshPromise;
+}
+
 function SilentRefresh({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
   // changing ready triggers a re-render (any setState causes React to re-render)
@@ -18,10 +30,10 @@ function SilentRefresh({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // on page load, try to get a new access token using the httpOnly cookie
-    api
-      .post<ApiResponse<{ accessToken: string }>>("/auth/refresh")
-      .then(({ data }) => dispatch(setAccessToken(data.data.accessToken)))
-      .catch(() => {}) // not logged in — that's fine
+    getRefreshPromise()
+      .then((token) => {
+        if (token) dispatch(setAccessToken(token));
+      }) // not logged in — that's fine if null
       .finally(() => setReady(true)); // setReady(true) triggers re-render → children render
   }, [dispatch]);
 
