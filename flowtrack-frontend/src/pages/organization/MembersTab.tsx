@@ -207,7 +207,7 @@ export default function MembersTab() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="border-line mt-4 flex min-h-0 flex-1 flex-col rounded-md border">
+    <div className="border-line mt-4 flex min-h-0 flex-1 flex-col rounded-md border bg-white">
       <div className="flex items-center justify-between p-4">
         <div className="text-sm font-medium">{filtered.length} Members</div>
         <div className="flex items-center gap-2">
@@ -247,8 +247,11 @@ export default function MembersTab() {
               <th className="text-muted px-4 py-3 text-left font-medium">
                 Role
               </th>
-              <th className="text-muted px-4 py-3 text-left font-medium">
+              <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell">
                 Joined
+              </th>
+              <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell">
+                Status
               </th>
               <th className="text-muted px-4 py-3 text-left font-medium">
                 Actions
@@ -258,7 +261,7 @@ export default function MembersTab() {
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={4} className="text-muted px-4 py-8 text-center">
+                <td colSpan={5} className="text-muted px-4 py-8 text-center">
                   No members found
                 </td>
               </tr>
@@ -281,13 +284,18 @@ export default function MembersTab() {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${ROLE_STYLES[member.role]}`}
+                      className={`rounded px-3 py-1 text-xs font-medium ${ROLE_STYLES[member.role]}`}
                     >
                       {member.role.charAt(0) +
                         member.role.slice(1).toLowerCase()}
                     </span>
                   </td>
-                  <td className="text-muted px-4 py-3">{member.joinedAt}</td>
+                  <td className="text-muted hidden px-4 py-3 lg:table-cell">{member.joinedAt}</td>
+                  <td className="hidden px-4 py-3 lg:table-cell">
+                    <span className="rounded bg-green-50 px-3 py-1 text-xs font-medium text-green-600">
+                      Active
+                    </span>
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       type="button"

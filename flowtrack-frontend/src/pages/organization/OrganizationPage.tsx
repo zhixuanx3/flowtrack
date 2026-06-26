@@ -19,38 +19,32 @@ export default function OrganizationPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <div className="text-2xl font-semibold">Organization</div>
-          <div className="text-md text-muted">
-            Manage your organization's settings and members
-          </div>
+      <div className="flex flex-col gap-1">
+        <div className="text-2xl font-semibold">Organization</div>
+        <div className="text-md text-muted">
+          Manage your organization's settings and members
         </div>
-        <Button type="button">
-          <Plus size={16} className="mr-2" />
-          Create Organization
-        </Button>
       </div>
 
-      <div className="border-line my-4 rounded-md border p-6">
+      <div className="border-line my-4 rounded-md border bg-white p-6">
         <div className="flex">
           <div className="bg-primary-light rounded-xl p-5">
             <Building2 size={50} className="text-primary" />
           </div>
           <div className="flex flex-col justify-around px-4 py-1">
             <div className="text-xl font-bold">FlowTrack Pte Ltd</div>
-            <div className="flex items-center gap-2">
-              <div className="text-md text-muted flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <div className="text-md text-muted flex items-center gap-1 whitespace-nowrap">
                 <User size={18} />
                 <div>25 members</div>
               </div>
               <Dot className="text-muted" size={20} />
-              <div className="text-md text-muted flex items-center gap-1">
+              <div className="text-md text-muted flex items-center gap-1 whitespace-nowrap">
                 <Crown size={18} />
                 <div>Owner</div>
               </div>
               <Dot className="text-muted" size={20} />
-              <div className="text-md text-muted flex items-center gap-1">
+              <div className="text-md text-muted flex items-center gap-1 whitespace-nowrap">
                 <Calendar size={18} />
                 <div>Created on 12 Mar 2024</div>
               </div>
