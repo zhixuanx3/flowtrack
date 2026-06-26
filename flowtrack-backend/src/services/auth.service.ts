@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import prisma from "../lib/prisma.js";
+import { AccountType } from "../generated/prisma/client.js";
 
 const RegisterSchema = z.object({
   email: z.email(),
@@ -14,6 +15,7 @@ const RegisterSchema = z.object({
       /^[a-zA-Z\s'-]+$/,
       "Name can only contain letters, spaces, hyphens and apostrophes",
     ),
+  accountType: z.enum([AccountType.INDIVIDUAL, AccountType.ORGANIZATION]),
 });
 
 const LoginSchema = z.object({
@@ -43,14 +45,14 @@ const generateTokens = async (userId: string, email: string) => {
 };
 
 export const register = async (data: unknown) => {
-  const { email, password, name } = RegisterSchema.parse(data);
+  const { email, password, name, accountType } = RegisterSchema.parse(data);
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error("Email already in use");
 
   const hashed = await bcrypt.hash(password, 10);
   await prisma.user.create({
-    data: { email, password: hashed, name },
+    data: { email, password: hashed, name, accountType },
   });
 
   return { message: "Account created successfully" };
@@ -73,7 +75,7 @@ export const login = async (data: unknown) => {
   return {
     accessToken,
     refreshToken, // controller will set this as httpOnly cookie
-    user: { id: user.id, email: user.email, name: user.name },
+    user: { id: user.id, email: user.email, name: user.name, accountType: user.accountType, organizationId: user.organizationId, role: user.role },
   };
 };
 
@@ -108,7 +110,7 @@ export const logout = async (token: string) => {
 export const getProfile = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, name: true, accountType: true, organizationId: true, role: true },
   });
   if (!user) throw new Error("User not found");
   return user;

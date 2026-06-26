@@ -5,6 +5,6 @@ import * as organizationController from "../controllers/org.controller.js";
 const router = Router();
 
 router.post("/", requireAuth, organizationController.createOrganization);
-router.get("/", requireAuth, organizationController.getOrganizations);
+router.get("/", requireAuth, organizationController.getOrganization);
 
 export default router;

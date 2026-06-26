@@ -13,11 +13,11 @@ export const createOrganization = async (req: Request, res: Response) => {
   }
 };
 
-export const getOrganizations = async (req: Request, res: Response) => {
+export const getOrganization = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
-    const organizations = await organizationService.getOrganizations(userId);
-    sendSuccess(res, "Success", organizations);
+    const organization = await organizationService.getOrganization(userId);
+    sendSuccess(res, "Success", organization);
   } catch (err) {
     handleError(err, res);
   }

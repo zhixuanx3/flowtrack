@@ -12,32 +12,43 @@ const ProjectSchema = z.object({
     ),
   description: z.string().optional(),
 });
-export const createProject = async (userId: string, organizationId: string, data: unknown) => {
+
+const checkOrgMembership = async (userId: string, organizationId: string) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user?.organizationId !== organizationId) {
+    throw new Error("Not a member of this organization");
+  }
+};
+
+export const createProject = async (
+  userId: string,
+  organizationId: string,
+  data: unknown,
+) => {
   const { name, description } = ProjectSchema.parse(data);
 
-  const member = await prisma.organizationMember.findUnique({
-    where: { userId_organizationId: { userId, organizationId } },
-  });
-
-  if (!member) throw new Error("Not a member of this organization");
+  await checkOrgMembership(userId, organizationId);
 
   const project = await prisma.project.create({
     data: { name, description, organizationId, createdById: userId },
     select: { id: true, name: true, description: true, status: true },
   });
 
+  await prisma.projectMember.create({
+    data: { projectId: project.id, userId },
+  });
+
   return project;
 };
 
 export const getProjects = async (userId: string, organizationId: string) => {
-  const member = await prisma.organizationMember.findUnique({
-    where: { userId_organizationId: { userId, organizationId } },
-  });
-
-  if (!member) throw new Error("Not a member of this organization");
+  await checkOrgMembership(userId, organizationId);
 
   return prisma.project.findMany({
-    where: { organizationId },
+    where: {
+      organizationId,
+      members: { some: { userId } },
+    },
     select: { id: true, name: true, description: true, status: true },
   });
 };
