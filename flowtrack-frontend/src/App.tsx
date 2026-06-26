@@ -5,9 +5,11 @@ import type { RootState } from "./store/index";
 import type { ApiResponse } from "./types/api";
 import { setAccessToken } from "./store/authSlice";
 import api from "./api/axios";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
+import AppLayout from "./layouts/AppLayout";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
+import OrganizationPage from "./pages/organization/OrganizationPage";
 
 function SilentRefresh({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
@@ -42,13 +44,15 @@ export default function App() {
           <Route path="/" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route
-            path="/dashboard"
             element={
               <PrivateRoute>
-                <DashboardPage />
+                <AppLayout />
               </PrivateRoute>
             }
-          />
+          >
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/organization" element={<OrganizationPage />} />
+          </Route>
         </Routes>
       </SilentRefresh>
     </BrowserRouter>
