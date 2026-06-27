@@ -12,7 +12,7 @@ import {
 import Button from "../../components/Button";
 import MembersTab from "./MembersTab";
 
-const TABS = ["Members", "Roles", "Settings", "Billing", "Audit Log"];
+const TABS = ["Members", "Roles", "Settings"];
 
 export default function OrganizationPage() {
   const [activeTab, setActiveTab] = useState("Members");
@@ -20,38 +20,40 @@ export default function OrganizationPage() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-col gap-1">
-        <div className="text-2xl font-semibold">Organization</div>
-        <div className="text-md text-muted">
+        <div className="text-xl font-bold sm:text-2xl">Organization</div>
+        <div className="sm:text-md text-muted text-sm">
           Manage your organization's settings and members
         </div>
       </div>
 
-      <div className="border-line my-4 rounded-md border bg-white p-6">
+      <div className="border-line my-2 rounded-md border bg-white px-4 py-3 sm:my-4 sm:p-6">
         <div className="flex">
-          <div className="bg-primary-light rounded-xl p-5">
-            <Building2 size={50} className="text-primary" />
+          <div className="bg-primary-light flex size-16 shrink-0 items-center justify-center rounded-xl sm:size-24">
+            <Building2 className="text-primary size-9.5 sm:size-13" />
           </div>
           <div className="flex flex-col justify-around px-4 py-1">
-            <div className="text-xl font-bold">FlowTrack Pte Ltd</div>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              <div className="text-md text-muted flex items-center gap-1 whitespace-nowrap">
-                <User size={18} />
+            <div className="text-lg font-semibold sm:text-xl">
+              FlowTrack Pte Ltd
+            </div>
+            <div className="mt-1 flex flex-col flex-wrap gap-x-2 gap-y-0.5 sm:mt-0 sm:flex-row sm:items-center">
+              <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
+                <User className="sm:size5 size-3.5" />
                 <div>25 members</div>
               </div>
-              <Dot className="text-muted" size={20} />
-              <div className="text-md text-muted flex items-center gap-1 whitespace-nowrap">
-                <Crown size={18} />
+              <Dot className="text-muted hidden sm:flex" size={20} />
+              <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
+                <Crown className="sm:size5 size-3.5" />
                 <div>Owner</div>
               </div>
-              <Dot className="text-muted" size={20} />
-              <div className="text-md text-muted flex items-center gap-1 whitespace-nowrap">
-                <Calendar size={18} />
+              <Dot className="text-muted hidden sm:flex" size={20} />
+              <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
+                <Calendar className="sm:size5 size-3.5" />
                 <div>Created on 12 Mar 2024</div>
               </div>
             </div>
           </div>
         </div>
-        <div className="mt-5 flex gap-3">
+        <div className="mt-5 hidden gap-3 md:flex">
           <Button variant="outline-grey" type="button">
             <Pencil size={16} className="mr-2" />
             Edit Organization
@@ -63,13 +65,13 @@ export default function OrganizationPage() {
         </div>
       </div>
 
-      <div className="border-line mt-4 flex gap-6 border-b">
+      <div className="border-line mt-2 flex gap-6 border-b sm:mt-4">
         {TABS.map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`cursor-pointer pb-3 text-sm font-medium transition ${
+            className={`cursor-pointer pb-2 text-sm font-medium transition sm:pb-3 ${
               activeTab === tab
                 ? "border-primary text-primary border-b-2"
                 : "text-muted hover:text-foreground"

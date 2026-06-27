@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   SlidersHorizontal,
   MoreVertical,
-  ChevronLeft,
-  ChevronRight,
+  SearchIcon,
 } from "lucide-react";
 
 const MOCK_MEMBERS = [
@@ -191,11 +190,12 @@ const ROLE_STYLES: Record<string, string> = {
   MEMBER: "bg-surface-secondary text-foreground border border-line",
 };
 
-const PAGE_SIZE = 20;
+const BATCH_SIZE = 10;
 
 export default function MembersTab() {
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const sentinelRef = useRef<HTMLTableRowElement>(null);
 
   const filtered = MOCK_MEMBERS.filter(
     (m) =>
@@ -203,15 +203,30 @@ export default function MembersTab() {
       m.email.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
+
+  useEffect(() => {
+    setVisibleCount(BATCH_SIZE);
+  }, [search]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasMore) setVisibleCount((c) => c + BATCH_SIZE); },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   return (
     <div className="border-line mt-4 flex min-h-0 flex-1 flex-col rounded-md border bg-white">
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between px-3 py-3 sm:p-4">
         <div className="text-sm font-medium">{filtered.length} Members</div>
         <div className="flex items-center gap-2">
-          <div className="relative">
+          <div className="relative hidden sm:flex">
             <Search
               size={14}
               className="text-muted absolute top-1/2 left-3 -translate-y-1/2"
@@ -219,84 +234,87 @@ export default function MembersTab() {
             <input
               type="text"
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search members..."
               className="border-line focus:ring-primary rounded-lg border py-2 pr-4 pl-8 text-sm focus:ring-1 focus:outline-none"
             />
           </div>
           <button
             type="button"
+            className="border-line hover:bg-surface-secondary flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm sm:hidden"
+          >
+            <SearchIcon size={14} />
+          </button>
+          <button
+            type="button"
             className="border-line hover:bg-surface-secondary flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm"
           >
             <SlidersHorizontal size={14} />
-            Filter
+            <span className="hidden sm:flex">Filter</span>
           </button>
         </div>
       </div>
 
       <div className="scrollbar-white min-h-0 flex-1 overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead className="border-line bg-surface-secondary sticky top-0 border-y">
             <tr>
-              <th className="text-muted px-4 py-3 text-left font-medium">
+              <th className="text-muted w-[55%] pl-3 py-3 pr-2 text-left font-medium sm:pl-4 lg:w-2/5">
                 Member
               </th>
-              <th className="text-muted px-4 py-3 text-left font-medium">
+              <th className="text-muted w-[30%] px-2 py-3 text-left font-medium sm:px-4 lg:w-1/5">
                 Role
               </th>
-              <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell">
+              <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell lg:w-1/5">
                 Joined
               </th>
-              <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell">
+              <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell lg:w-1/5">
                 Status
               </th>
-              <th className="text-muted px-4 py-3 text-left font-medium">
-                Actions
-              </th>
+              <th className="w-[15%] pl-2 py-3 pr-3 sm:pr-4 lg:w-auto" />
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 ? (
+            {visible.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-muted px-4 py-8 text-center">
                   No members found
                 </td>
               </tr>
             ) : (
-              paginated.map((member) => (
+              visible.map((member) => (
                 <tr
                   key={member.id}
                   className="border-line hover:bg-surface-secondary border-b last:border-0"
                 >
-                  <td className="px-4 py-3">
+                  <td className="pl-3 py-3 pr-2 sm:pl-4">
                     <div className="flex items-center gap-3">
-                      <div className="bg-primary-light text-primary flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium">
+                      <div className="bg-primary-light text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-medium">
                         {member.name.charAt(0)}
                       </div>
-                      <div>
-                        <div className="font-medium">{member.name}</div>
-                        <div className="text-muted text-xs">{member.email}</div>
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{member.name}</div>
+                        <div className="text-muted truncate text-xs">{member.email}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-3 sm:px-4">
                     <span
-                      className={`rounded px-3 py-1 text-xs font-medium ${ROLE_STYLES[member.role]}`}
+                      className={`block max-w-20 truncate rounded px-3 py-1 text-center text-xs font-medium ${ROLE_STYLES[member.role]}`}
                     >
                       {member.role.charAt(0) +
                         member.role.slice(1).toLowerCase()}
                     </span>
                   </td>
-                  <td className="text-muted hidden px-4 py-3 lg:table-cell">{member.joinedAt}</td>
+                  <td className="text-muted hidden px-4 py-3 lg:table-cell">
+                    {member.joinedAt}
+                  </td>
                   <td className="hidden px-4 py-3 lg:table-cell">
                     <span className="rounded bg-green-50 px-3 py-1 text-xs font-medium text-green-600">
                       Active
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="pl-2 py-3 pr-3 text-center sm:pr-4">
                     <button
                       type="button"
                       className="hover:bg-surface-secondary cursor-pointer rounded p-1"
@@ -307,43 +325,12 @@ export default function MembersTab() {
                 </tr>
               ))
             )}
+            <tr ref={sentinelRef} />
           </tbody>
         </table>
-      </div>
-
-      <div className="border-line flex items-center justify-between border-t px-4 py-3">
-        <div className="text-muted text-sm">
-          Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–
-          {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="hover:bg-surface-secondary cursor-pointer rounded p-1 disabled:cursor-default disabled:opacity-40"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPage(p)}
-              className={`h-7 w-7 cursor-pointer rounded text-sm ${p === page ? "bg-primary text-white" : "hover:bg-surface-secondary"}`}
-            >
-              {p}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="hover:bg-surface-secondary cursor-pointer rounded p-1 disabled:cursor-default disabled:opacity-40"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
+        {hasMore && (
+          <div className="text-muted py-4 text-center text-sm">Loading...</div>
+        )}
       </div>
     </div>
   );
