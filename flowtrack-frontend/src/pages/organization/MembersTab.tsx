@@ -217,7 +217,7 @@ export default function MembersTab() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const sentinelRef = useRef<HTMLTableRowElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const loadMoreMembers = async (pageNum: number) => {
     setIsLoading(true);
@@ -238,19 +238,23 @@ export default function MembersTab() {
   }, [page]);
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && hasMore && !isLoading) {
-          setPage((p) => p + 1);
-        }
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      // scrollHeight - scrollTop - clientHeight = pixels remaining below the visible area.
+      if (
+        scrollHeight - scrollTop - clientHeight < 100 &&
+        hasMore &&
+        !isLoading
+      ) {
+        setPage((p) => p + 1);
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
   }, [hasMore, isLoading]);
 
   const filtered = members.filter(
@@ -293,7 +297,10 @@ export default function MembersTab() {
         </div>
       </div>
 
-      <div className="scrollbar-white min-h-0 flex-1 overflow-auto">
+      <div
+        ref={scrollContainerRef}
+        className="scrollbar-white min-h-0 flex-1 overflow-auto"
+      >
         <table className="w-full table-fixed text-sm">
           <thead className="border-line bg-surface-secondary sticky top-0 border-y">
             <tr>
@@ -313,7 +320,7 @@ export default function MembersTab() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {filtered.length === 0 && !isLoading ? (
               <tr>
                 <td colSpan={5} className="text-muted px-4 py-8 text-center">
                   No members found
@@ -367,9 +374,9 @@ export default function MembersTab() {
                 </tr>
               ))
             )}
-            <tr ref={sentinelRef} />
           </tbody>
         </table>
+
         {isLoading && (
           <div className="text-muted py-4 text-center text-sm">Loading...</div>
         )}
