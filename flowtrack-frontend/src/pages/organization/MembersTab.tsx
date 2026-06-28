@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -183,6 +183,8 @@ const MOCK_MEMBERS = [
     joinedAt: "12 May 2024",
   },
 ];
+const PAGE_SIZE = 10;
+const TOTAL_NO_MEMBERS = 25;
 
 const ROLE_STYLES: Record<string, string> = {
   OWNER: "bg-primary-light text-primary",
@@ -190,36 +192,72 @@ const ROLE_STYLES: Record<string, string> = {
   MEMBER: "bg-surface-secondary text-foreground border border-line",
 };
 
-const BATCH_SIZE = 10;
+type Member = (typeof MOCK_MEMBERS)[number];
+type MembersResponse = {
+  members: Member[];
+  hasMore: boolean;
+};
+
+const getMembers = async (page: number): Promise<MembersResponse> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const start = (page - 1) * PAGE_SIZE;
+      const hasMorePages = page * PAGE_SIZE < TOTAL_NO_MEMBERS;
+      resolve({
+        members: MOCK_MEMBERS.slice(start, start + PAGE_SIZE),
+        hasMore: hasMorePages,
+      });
+    }, 600);
+  });
+};
 
 export default function MembersTab() {
   const [search, setSearch] = useState("");
-  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
   const sentinelRef = useRef<HTMLTableRowElement>(null);
 
-  const filtered = MOCK_MEMBERS.filter(
-    (m) =>
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.email.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const visible = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
+  const loadMoreMembers = async (pageNum: number) => {
+    setIsLoading(true);
+    const data = await getMembers(pageNum);
+    setMembers((prev) =>
+      pageNum <= 1 ? data.members : [...prev, ...data.members],
+    );
+    setHasMore(data.hasMore);
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    setVisibleCount(BATCH_SIZE);
-  }, [search]);
+    loadMoreMembers(1);
+  }, []);
+
+  useEffect(() => {
+    if (page > 1) loadMoreMembers(page);
+  }, [page]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
+
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting && hasMore) setVisibleCount((c) => c + BATCH_SIZE); },
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !isLoading) {
+          setPage((p) => p + 1);
+        }
+      },
       { threshold: 0.1 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore]);
+  }, [hasMore, isLoading]);
+
+  const filtered = members.filter(
+    (m) =>
+      m.name.toLowerCase().includes(search.toLowerCase()) ||
+      m.email.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <div className="border-line mt-4 flex min-h-0 flex-1 flex-col rounded-md border bg-white">
@@ -259,42 +297,46 @@ export default function MembersTab() {
         <table className="w-full table-fixed text-sm">
           <thead className="border-line bg-surface-secondary sticky top-0 border-y">
             <tr>
-              <th className="text-muted w-[55%] pl-3 py-3 pr-2 text-left font-medium sm:pl-4 lg:w-2/5">
+              <th className="text-muted w-[55%] py-3 pr-2 pl-3 text-center font-medium sm:pl-4 lg:w-2/5">
                 Member
               </th>
-              <th className="text-muted w-[30%] px-2 py-3 text-left font-medium sm:px-4 lg:w-1/5">
+              <th className="text-muted w-[30%] px-2 py-3 text-center font-medium sm:px-4 lg:w-1/5">
                 Role
               </th>
-              <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell lg:w-1/5">
+              <th className="text-muted hidden px-4 py-3 text-center font-medium lg:table-cell lg:w-1/5">
                 Joined
               </th>
-              <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell lg:w-1/5">
+              <th className="text-muted hidden px-4 py-3 text-center font-medium lg:table-cell lg:w-1/5">
                 Status
               </th>
-              <th className="w-[15%] pl-2 py-3 pr-3 sm:pr-4 lg:w-auto" />
+              <th className="w-[15%] py-3 pr-3 pl-2 sm:pr-4 lg:w-auto" />
             </tr>
           </thead>
           <tbody>
-            {visible.length === 0 ? (
+            {filtered.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-muted px-4 py-8 text-center">
                   No members found
                 </td>
               </tr>
             ) : (
-              visible.map((member) => (
+              filtered.map((member) => (
                 <tr
                   key={member.id}
                   className="border-line hover:bg-surface-secondary border-b last:border-0"
                 >
-                  <td className="pl-3 py-3 pr-2 sm:pl-4">
+                  <td className="py-3 pr-2 pl-3 sm:pl-4">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary-light text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-medium">
                         {member.name.charAt(0)}
                       </div>
                       <div className="min-w-0">
-                        <div className="truncate font-medium">{member.name}</div>
-                        <div className="text-muted truncate text-xs">{member.email}</div>
+                        <div className="truncate font-medium">
+                          {member.name}
+                        </div>
+                        <div className="text-muted truncate text-xs">
+                          {member.email}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -314,7 +356,7 @@ export default function MembersTab() {
                       Active
                     </span>
                   </td>
-                  <td className="pl-2 py-3 pr-3 text-center sm:pr-4">
+                  <td className="py-3 pr-3 pl-2 text-center sm:pr-4">
                     <button
                       type="button"
                       className="hover:bg-surface-secondary cursor-pointer rounded p-1"
@@ -328,7 +370,7 @@ export default function MembersTab() {
             <tr ref={sentinelRef} />
           </tbody>
         </table>
-        {hasMore && (
+        {isLoading && (
           <div className="text-muted py-4 text-center text-sm">Loading...</div>
         )}
       </div>
