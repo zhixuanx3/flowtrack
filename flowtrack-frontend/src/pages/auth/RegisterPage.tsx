@@ -101,28 +101,35 @@ export default function RegisterPage() {
             <Input
               label="Organization Name"
               type="text"
-              placeholder="Acme Pte Ltd"
+              placeholder="FlowTrack Pte Ltd"
               error={errors.orgName?.message}
               {...registerField("orgName")}
             />
           )}
 
-          <label className="text-foreground my-2 flex cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={isOrg}
-              onChange={(e) =>
-                setValue(
-                  "accountType",
-                  e.target.checked
-                    ? AccountType.ORGANIZATION
-                    : AccountType.INDIVIDUAL,
-                )
-              }
-              className="checkbox-primary"
-            />
-            I'm registering on behalf of an organization
-          </label>
+          <div className="my-2">
+            <label className="text-foreground flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={isOrg}
+                onChange={(e) =>
+                  setValue(
+                    "accountType",
+                    e.target.checked
+                      ? AccountType.ORGANIZATION
+                      : AccountType.INDIVIDUAL,
+                  )
+                }
+                className="checkbox-primary"
+              />
+              I'm registering on behalf of an organization
+            </label>
+            {isOrg && (
+              <p className="text-muted mt-1 ml-6 text-xs">
+                You'll be the owner of this organization.
+              </p>
+            )}
+          </div>
 
           <Button
             type="submit"

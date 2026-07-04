@@ -17,6 +17,7 @@ import { getOrganization } from "../../api/org";
 import { setOrg } from "../../store/authSlice";
 import { hasPermission, type MemberRole } from "../../utils/permissions";
 import { withMinDuration } from "../../utils/withMinDuration";
+import EditOrganizationModal from "./EditOrganizationModal";
 
 const ALL_TABS = [
   { key: "Members", permission: "members:view" },
@@ -31,8 +32,7 @@ export default function OrganizationPage() {
 
   const { data: org = reduxOrg } = useQuery({
     queryKey: ["organization"],
-    queryFn: () =>
-      withMinDuration(getOrganization().then((r) => r.data)),
+    queryFn: () => withMinDuration(getOrganization().then((r) => r.data)),
   });
 
   // Keep Redux in sync so AppLayout's nav-permission check sees fresh org/role data too.
@@ -42,6 +42,8 @@ export default function OrganizationPage() {
 
   const role = org?.role as MemberRole | undefined;
   const tabs = ALL_TABS.filter((tab) => hasPermission(role, tab.permission));
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   return (
     <div className="flex h-full flex-col">
@@ -94,7 +96,11 @@ export default function OrganizationPage() {
         </div>
         <div className="mt-5 hidden gap-3 md:flex">
           {hasPermission(role, "org:edit") && (
-            <Button variant="outline-grey" type="button">
+            <Button
+              variant="outline-grey"
+              type="button"
+              onClick={() => setIsEditOpen(true)}
+            >
               <Pencil size={16} className="mr-2" />
               Edit Organization
             </Button>
@@ -126,6 +132,11 @@ export default function OrganizationPage() {
       </div>
 
       {activeTab === "Members" && <MembersTab />}
+
+      <EditOrganizationModal
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+      />
     </div>
   );
 }

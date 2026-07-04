@@ -15,6 +15,7 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   name: z
     .string()
+    .min(1, 'Name is required')
     .min(2, 'Name must be at least 2 characters')
     .max(50, 'Name must be at most 50 characters')
     .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens and apostrophes'),
@@ -24,7 +25,9 @@ export const registerSchema = z.object({
   orgName: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.accountType === AccountType.ORGANIZATION) {
-    if (!data.orgName || data.orgName.trim().length < 2) {
+    if (!data.orgName || data.orgName.trim().length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Organisation name is required', path: ['orgName'] });
+    } else if (data.orgName.trim().length < 2) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Organisation name must be at least 2 characters', path: ['orgName'] });
     } else if (data.orgName.trim().length > 50) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Organisation name must be at most 50 characters', path: ['orgName'] });
