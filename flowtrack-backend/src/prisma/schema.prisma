@@ -7,11 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum AccountType {
-  INDIVIDUAL
-  ORGANIZATION
-}
-
 enum MemberRole {
   OWNER
   ADMIN
@@ -28,7 +23,6 @@ model User {
   email           String          @unique
   password        String
   name            String
-  accountType     AccountType     @default(INDIVIDUAL)
   organizationId  String?
   role            MemberRole?
   createdAt       DateTime        @default(now())

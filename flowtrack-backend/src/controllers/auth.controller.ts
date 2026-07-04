@@ -21,11 +21,11 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { accessToken, refreshToken, user } = await authService.login(
+    const { accessToken, refreshToken, user, org } = await authService.login(
       req.body,
     );
     res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
-    sendSuccess(res, "Login successful", { accessToken, user });
+    sendSuccess(res, "Login successful", { accessToken, user, org });
   } catch (err) {
     handleError(err, res, 401);
   }

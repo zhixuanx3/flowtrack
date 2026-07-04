@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import prisma from "../lib/prisma.js";
-import { AccountType } from "../generated/prisma/client.js";
+import { MemberRole } from "../generated/prisma/client.js";
 
 const RegisterSchema = z.object({
   email: z.email(),
@@ -15,7 +15,8 @@ const RegisterSchema = z.object({
       /^[a-zA-Z\s'-]+$/,
       "Name can only contain letters, spaces, hyphens and apostrophes",
     ),
-  accountType: z.enum([AccountType.INDIVIDUAL, AccountType.ORGANIZATION]),
+  accountType: z.enum(["INDIVIDUAL", "ORGANIZATION"]),
+  orgName: z.string().optional(),
 });
 
 const LoginSchema = z.object({
@@ -45,15 +46,32 @@ const generateTokens = async (userId: string, email: string) => {
 };
 
 export const register = async (data: unknown) => {
-  const { email, password, name, accountType } = RegisterSchema.parse(data);
+  const { email, password, name, accountType, orgName } = RegisterSchema.parse(data);
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error("Email already in use");
 
   const hashed = await bcrypt.hash(password, 10);
-  await prisma.user.create({
-    data: { email, password: hashed, name, accountType },
-  });
+
+  if (accountType === "ORGANIZATION") {
+    if (!orgName) throw new Error("Organisation name is required");
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: { email, password: hashed, name, role: MemberRole.OWNER },
+      });
+      const org = await tx.organization.create({
+        data: { name: orgName, ownerId: user.id, members: { connect: { id: user.id } } },
+      });
+      await tx.user.update({
+        where: { id: user.id },
+        data: { organizationId: org.id },
+      });
+    });
+  } else {
+    await prisma.user.create({
+      data: { email, password: hashed, name },
+    });
+  }
 
   return { message: "Account created successfully" };
 };
@@ -72,10 +90,18 @@ export const login = async (data: unknown) => {
     user.email,
   );
 
+  const org = user.organizationId
+    ? await prisma.organization.findUnique({
+        where: { id: user.organizationId },
+        select: { id: true, name: true },
+      })
+    : null;
+
   return {
     accessToken,
-    refreshToken, // controller will set this as httpOnly cookie
-    user: { id: user.id, email: user.email, name: user.name, accountType: user.accountType, organizationId: user.organizationId, role: user.role },
+    refreshToken,
+    user: { id: user.id, email: user.email, name: user.name },
+    org: org ? { ...org, role: user.role! } : null,
   };
 };
 
@@ -110,8 +136,19 @@ export const logout = async (token: string) => {
 export const getProfile = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, accountType: true, organizationId: true, role: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      organization: { select: { id: true, name: true } },
+    },
   });
   if (!user) throw new Error("User not found");
-  return user;
+
+  const { organization, role, ...rest } = user;
+  return {
+    user: rest,
+    org: organization ? { ...organization, role: role! } : null,
+  };
 };

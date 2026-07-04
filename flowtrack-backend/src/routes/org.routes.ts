@@ -6,5 +6,10 @@ const router = Router();
 
 router.post("/", requireAuth, organizationController.createOrganization);
 router.get("/", requireAuth, organizationController.getOrganization);
+router.get(
+  "/members",
+  requireAuth,
+  organizationController.getOrganizationMembers,
+);
 
 export default router;

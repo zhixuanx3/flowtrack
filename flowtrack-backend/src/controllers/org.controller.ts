@@ -6,7 +6,10 @@ import * as organizationService from "../services/org.service.js";
 export const createOrganization = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
-    const organization = await organizationService.createOrganization(userId, req.body);
+    const organization = await organizationService.createOrganization(
+      userId,
+      req.body,
+    );
     sendSuccess(res, "Organization created successfully", organization, 201);
   } catch (err) {
     handleError(err, res);
@@ -18,6 +21,22 @@ export const getOrganization = async (req: Request, res: Response) => {
     const userId = (req as any).userId;
     const organization = await organizationService.getOrganization(userId);
     sendSuccess(res, "Success", organization);
+  } catch (err) {
+    handleError(err, res);
+  }
+};
+
+export const getOrganizationMembers = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const orgMembers = await organizationService.getOrganizationMembers(
+      userId,
+      page,
+      pageSize,
+    );
+    sendSuccess(res, "Success", orgMembers);
   } catch (err) {
     handleError(err, res);
   }
