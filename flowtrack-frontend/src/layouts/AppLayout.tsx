@@ -9,16 +9,20 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { logout } from "../api/auth";
 import { clearCredentials } from "../store/authSlice";
+import type { RootState } from "../store";
 import logo from "../assets/logo.svg";
 import { isMobile } from "../utils/breakpoints";
+import { hasPermission, type MemberRole } from "../utils/permissions";
 
 export default function AppLayout() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const org = useSelector((state: RootState) => state.auth.org);
+  const canViewOrg = hasPermission(org?.role as MemberRole | undefined, "org:view");
   const [collapsed, setCollapsed] = useState(isMobile);
   const [skipTransition, setSkipTransition] = useState(false);
 
@@ -143,19 +147,21 @@ export default function AppLayout() {
             </span>
           </NavLink>
 
-          <NavLink
-            to="/organization"
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-3 transition ${isActive ? "bg-secondary-light font-medium" : ""}`
-            }
-          >
-            <Building2 size={20} className="shrink-0" />
-            <span
-              className={`overflow-hidden transition-all duration-300 ${collapsed ? "max-w-0 opacity-0" : "max-w-xs opacity-100"}`}
+          {canViewOrg && (
+            <NavLink
+              to="/organization"
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-3 transition ${isActive ? "bg-secondary-light font-medium" : ""}`
+              }
             >
-              Organization
-            </span>
-          </NavLink>
+              <Building2 size={20} className="shrink-0" />
+              <span
+                className={`overflow-hidden transition-all duration-300 ${collapsed ? "max-w-0 opacity-0" : "max-w-xs opacity-100"}`}
+              >
+                Organization
+              </span>
+            </NavLink>
+          )}
         </nav>
 
         <button

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "./store/index";
 import type { ApiResponse } from "./types/api";
-import { setAccessToken } from "./store/authSlice";
+import { setAccessToken, setCredentials } from "./store/authSlice";
 import api from "./api/axios";
+import { getProfile } from "./api/auth";
 import AppLayout from "./layouts/AppLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
@@ -25,16 +26,21 @@ function getRefreshPromise() {
 
 function SilentRefresh({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
-  // changing ready triggers a re-render (any setState causes React to re-render)
   const [ready, setReady] = useState(false);
+  const called = useRef(false);
 
   useEffect(() => {
-    // on page load, try to get a new access token using the httpOnly cookie
+    if (called.current) return;
+    called.current = true;
+
     getRefreshPromise()
-      .then((token) => {
-        if (token) dispatch(setAccessToken(token));
-      }) // not logged in — that's fine if null
-      .finally(() => setReady(true)); // setReady(true) triggers re-render → children render
+      .then(async (token) => {
+        if (!token) return;
+        dispatch(setAccessToken(token));
+        const { data } = await getProfile();
+        dispatch(setCredentials({ accessToken: token, user: data.user, org: data.org }));
+      })
+      .finally(() => setReady(true));
   }, [dispatch]);
 
   // block rendering until refresh attempt is done — prevents PrivateRoute

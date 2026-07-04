@@ -21,6 +21,15 @@ export const registerSchema = z.object({
   email: z.email('Invalid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   accountType: z.enum([AccountType.INDIVIDUAL, AccountType.ORGANIZATION]),
+  orgName: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.accountType === AccountType.ORGANIZATION) {
+    if (!data.orgName || data.orgName.trim().length < 2) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Organisation name must be at least 2 characters', path: ['orgName'] });
+    } else if (data.orgName.trim().length > 50) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Organisation name must be at most 50 characters', path: ['orgName'] });
+    }
+  }
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;

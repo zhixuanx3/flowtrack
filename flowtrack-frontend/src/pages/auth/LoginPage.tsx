@@ -26,7 +26,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       const { data: authData } = await login(data.email, data.password);
-      dispatch(setCredentials({ accessToken: authData.accessToken, user: authData.user }));
+      dispatch(setCredentials({ accessToken: authData.accessToken, user: authData.user, org: authData.org }));
       navigate("/dashboard");
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? err.message);

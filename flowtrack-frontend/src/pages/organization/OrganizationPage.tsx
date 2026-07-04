@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Plus,
   Dot,
   Crown,
   Calendar,
@@ -9,13 +8,31 @@ import {
   UserRoundPlus,
   Pencil,
 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../../store";
 import Button from "../../components/Button";
-import MembersTab from "./MembersTab";
+import MembersTab from "./members/MembersTab";
+import { getOrganization } from "../../api/org";
+import { setOrg } from "../../store/authSlice";
+import { hasPermission, type MemberRole } from "../../utils/permissions";
 
-const TABS = ["Members", "Roles", "Settings"];
+const ALL_TABS = [
+  { key: "Members", permission: "members:view" },
+  { key: "Roles", permission: "roles:manage" },
+  { key: "Settings", permission: "settings:manage" },
+] as const;
 
 export default function OrganizationPage() {
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("Members");
+  const org = useSelector((state: RootState) => state.auth.org);
+  const role = org?.role as MemberRole | undefined;
+
+  useEffect(() => {
+    getOrganization().then(({ data }) => dispatch(setOrg(data)));
+  }, [dispatch]);
+
+  const tabs = ALL_TABS.filter((tab) => hasPermission(role, tab.permission));
 
   return (
     <div className="flex h-full flex-col">
@@ -33,51 +50,68 @@ export default function OrganizationPage() {
           </div>
           <div className="flex flex-col justify-around px-4 py-1">
             <div className="text-lg font-semibold sm:text-xl">
-              FlowTrack Pte Ltd
+              {org?.name ?? "—"}
             </div>
             <div className="mt-1 flex flex-col flex-wrap gap-x-2 gap-y-0.5 sm:mt-0 sm:flex-row sm:items-center">
               <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
                 <User className="sm:size5 size-3.5" />
-                <div>25 members</div>
+                <div>{org?.memberCount ?? "—"} members</div>
               </div>
               <Dot className="text-muted hidden sm:flex" size={20} />
               <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
                 <Crown className="sm:size5 size-3.5" />
-                <div>Owner</div>
+                <div>
+                  {org?.role
+                    ? org.role.charAt(0) + org.role.slice(1).toLowerCase()
+                    : "—"}
+                </div>
               </div>
               <Dot className="text-muted hidden sm:flex" size={20} />
               <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
                 <Calendar className="sm:size5 size-3.5" />
-                <div>Created on 12 Mar 2024</div>
+                <div>
+                  Created on{" "}
+                  {org?.createdAt
+                    ? new Date(org.createdAt).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </div>
               </div>
             </div>
           </div>
         </div>
         <div className="mt-5 hidden gap-3 md:flex">
-          <Button variant="outline-grey" type="button">
-            <Pencil size={16} className="mr-2" />
-            Edit Organization
-          </Button>
-          <Button variant="outline" type="button">
-            <UserRoundPlus size={16} className="mr-2" />
-            Invite Members
-          </Button>
+          {hasPermission(role, "org:edit") && (
+            <Button variant="outline-grey" type="button">
+              <Pencil size={16} className="mr-2" />
+              Edit Organization
+            </Button>
+          )}
+          {hasPermission(role, "org:invite") && (
+            <Button variant="outline" type="button">
+              <UserRoundPlus size={16} className="mr-2" />
+              Invite Members
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="border-line mt-2 flex gap-6 border-b sm:mt-4">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
-            key={tab}
+            key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => setActiveTab(tab.key)}
             className={`cursor-pointer pb-2 text-sm font-medium transition sm:pb-3 ${
-              activeTab === tab
+              activeTab === tab.key
                 ? "border-primary text-primary border-b-2"
                 : "text-muted hover:text-foreground"
             }`}
           >
-            {tab}
+            {tab.key}
           </button>
         ))}
       </div>
