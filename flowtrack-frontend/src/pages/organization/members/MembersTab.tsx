@@ -5,12 +5,13 @@ import {
   MoreVertical,
   SearchIcon,
 } from "lucide-react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { getOrganizationMembers } from "../../../api/org";
 import type { Member } from "../../../api/org";
-import { useInfiniteScroll } from "../../../hooks/useInfiniteScroll";
+import { useNearBottomScroll } from "../../../hooks/useNearBottomScroll";
+import { withMinDuration } from "../../../utils/withMinDuration";
 
 const PAGE_SIZE = 10;
-const MOCK_TOTAL = 47;
 
 const ROLE_STYLES: Record<string, string> = {
   OWNER: "bg-primary-light text-primary",
@@ -18,43 +19,29 @@ const ROLE_STYLES: Record<string, string> = {
   MEMBER: "bg-surface-secondary text-foreground border border-line",
 };
 
-// Generates fake pages of members so infinite scroll can be tested without a big real dataset.
-const getMockMembersPage = async (page: number, pageSize: number) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  const start = (page - 1) * pageSize;
-  const items: Member[] = Array.from(
-    { length: Math.max(0, Math.min(pageSize, MOCK_TOTAL - start)) },
-    (_, i) => {
-      const n = start + i + 1;
-      return {
-        id: String(n),
-        name: `Mock User ${n}`,
-        email: `mock.user${n}@example.com`,
-        role: n % 7 === 0 ? "OWNER" : n % 3 === 0 ? "ADMIN" : "MEMBER",
-        createdAt: new Date().toISOString(),
-      };
-    },
-  );
-  return { items, hasMore: start + items.length < MOCK_TOTAL };
-};
-
 export default function MembersTab() {
   const [search, setSearch] = useState("");
-  const {
-    items: members,
-    isLoading,
-    containerRef: scrollContainerRef,
-  } = useInfiniteScroll<Member>(async (page) => {
-    // Real API call — uncomment to switch back, and comment out the mock line below.
-    const { data } = await getOrganizationMembers(page, PAGE_SIZE);
-    return {
-      items: data.members,
-      hasMore: data.page * data.pageSize < data.total,
-    };
 
-    // return getMockMembersPage(page, PAGE_SIZE);
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery({
+      queryKey: ["organizationMembers"],
+      queryFn: ({ pageParam }) =>
+        withMinDuration(
+          getOrganizationMembers(pageParam, PAGE_SIZE).then((r) => r.data),
+        ),
+      initialPageParam: 1,
+      getNextPageParam: (lastPage) =>
+        lastPage.page * lastPage.pageSize < lastPage.total
+          ? lastPage.page + 1
+          : undefined,
+    });
+
+  const members: Member[] = data?.pages.flatMap((p) => p.members) ?? [];
+
+  const scrollContainerRef = useNearBottomScroll(
+    () => fetchNextPage(),
+    !!hasNextPage && !isFetchingNextPage,
+  );
 
   const filtered = members.filter(
     (m) =>
@@ -180,7 +167,7 @@ export default function MembersTab() {
           </tbody>
         </table>
 
-        {isLoading && (
+        {(isLoading || isFetchingNextPage) && (
           <div className="text-muted py-4 text-center text-sm">Loading...</div>
         )}
       </div>

@@ -8,6 +8,7 @@ import {
   UserRoundPlus,
   Pencil,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../store";
 import Button from "../../components/Button";
@@ -15,6 +16,7 @@ import MembersTab from "./members/MembersTab";
 import { getOrganization } from "../../api/org";
 import { setOrg } from "../../store/authSlice";
 import { hasPermission, type MemberRole } from "../../utils/permissions";
+import { withMinDuration } from "../../utils/withMinDuration";
 
 const ALL_TABS = [
   { key: "Members", permission: "members:view" },
@@ -25,13 +27,20 @@ const ALL_TABS = [
 export default function OrganizationPage() {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("Members");
-  const org = useSelector((state: RootState) => state.auth.org);
-  const role = org?.role as MemberRole | undefined;
+  const reduxOrg = useSelector((state: RootState) => state.auth.org);
 
+  const { data: org = reduxOrg } = useQuery({
+    queryKey: ["organization"],
+    queryFn: () =>
+      withMinDuration(getOrganization().then((r) => r.data)),
+  });
+
+  // Keep Redux in sync so AppLayout's nav-permission check sees fresh org/role data too.
   useEffect(() => {
-    getOrganization().then(({ data }) => dispatch(setOrg(data)));
-  }, [dispatch]);
+    if (org) dispatch(setOrg(org));
+  }, [org, dispatch]);
 
+  const role = org?.role as MemberRole | undefined;
   const tabs = ALL_TABS.filter((tab) => hasPermission(role, tab.permission));
 
   return (
