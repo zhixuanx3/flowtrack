@@ -3,8 +3,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
-import { toast } from "sonner";
 import logo from "../../assets/logo.svg";
 import { login } from "../../api/auth";
 import { setCredentials } from "../../store/authSlice";
@@ -20,18 +20,24 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
 
-  const onSubmit = async (data: LoginFormData) => {
-    try {
-      const { data: authData } = await login(data.email, data.password);
-      dispatch(setCredentials({ accessToken: authData.accessToken, user: authData.user, org: authData.org }));
+  const loginMutation = useMutation({
+    mutationFn: (data: LoginFormData) => login(data.email, data.password),
+    onSuccess: ({ data: authData }) => {
+      dispatch(
+        setCredentials({
+          accessToken: authData.accessToken,
+          user: authData.user,
+          org: authData.org,
+        }),
+      );
       navigate("/dashboard");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? err.message);
-    }
-  };
+    },
+  });
+
+  const onSubmit = (data: LoginFormData) => loginMutation.mutate(data);
 
   return (
     <div className="min-h-screen content-center bg-primary-light px-5 sm:px-0">
@@ -74,7 +80,7 @@ export default function LoginPage() {
             <p className="h-4 text-xs text-error">{errors.password?.message}</p>
           </div>
 
-          <Button type="submit" loading={isSubmitting} className="mt-2 w-full py-2">
+          <Button type="submit" loading={loginMutation.isPending} className="mt-2 w-full py-2">
             Login
           </Button>
         </form>

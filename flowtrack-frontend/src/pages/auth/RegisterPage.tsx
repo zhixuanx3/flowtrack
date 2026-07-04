@@ -3,7 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 import logo from "../../assets/logo.svg";
 import { register } from "../../api/auth";
 import {
@@ -23,7 +23,7 @@ export default function RegisterPage() {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: { accountType: AccountType.INDIVIDUAL },
@@ -31,20 +31,19 @@ export default function RegisterPage() {
 
   const isOrg = watch("accountType") === AccountType.ORGANIZATION;
 
-  const onSubmit = async (data: RegisterFormData) => {
-    try {
-      await register(
+  const registerMutation = useMutation({
+    mutationFn: (data: RegisterFormData) =>
+      register(
         data.email,
         data.password,
         data.name,
         data.accountType,
         data.orgName,
-      );
-      navigate("/");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? err.message);
-    }
-  };
+      ),
+    onSuccess: () => navigate("/"),
+  });
+
+  const onSubmit = (data: RegisterFormData) => registerMutation.mutate(data);
 
   return (
     <div className="bg-primary-light min-h-screen content-center px-4 sm:px-0">
@@ -127,7 +126,7 @@ export default function RegisterPage() {
 
           <Button
             type="submit"
-            loading={isSubmitting}
+            loading={registerMutation.isPending}
             className="mt-2 w-full py-2"
           >
             Register

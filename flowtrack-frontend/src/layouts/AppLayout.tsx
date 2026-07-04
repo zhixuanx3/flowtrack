@@ -10,7 +10,7 @@ import {
 import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 import { logout } from "../api/auth";
 import { clearCredentials } from "../store/authSlice";
 import type { RootState } from "../store";
@@ -49,15 +49,15 @@ export default function AppLayout() {
     }
   }, [skipTransition]);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
       dispatch(clearCredentials());
       navigate("/");
-    } catch {
-      toast.error("Failed to logout");
-    }
-  };
+    },
+  });
+
+  const handleLogout = () => logoutMutation.mutate();
 
   return (
     <div className="flex h-screen flex-col overflow-hidden md:flex-row">
