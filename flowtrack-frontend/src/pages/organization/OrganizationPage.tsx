@@ -9,14 +9,13 @@ import {
   Pencil,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../../store";
+import { useDispatch } from "react-redux";
 import Button from "../../components/Button";
+import Skeleton from "../../components/Skeleton";
 import MembersTab from "./members/MembersTab";
-import { getOrganization } from "../../api/org";
+import { organizationQueryOptions } from "../../api/org";
 import { setOrg } from "../../store/authSlice";
 import { hasPermission, type MemberRole } from "../../utils/permissions";
-import { withMinDuration } from "../../utils/withMinDuration";
 import EditOrganizationModal from "./EditOrganizationModal";
 
 const ALL_TABS = [
@@ -28,12 +27,7 @@ const ALL_TABS = [
 export default function OrganizationPage() {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("Members");
-  const reduxOrg = useSelector((state: RootState) => state.auth.org);
-
-  const { data: org = reduxOrg } = useQuery({
-    queryKey: ["organization"],
-    queryFn: () => withMinDuration(getOrganization().then((r) => r.data)),
-  });
+  const { data: org, isLoading } = useQuery(organizationQueryOptions);
 
   // Keep Redux in sync so AppLayout's nav-permission check sees fresh org/role data too.
   useEffect(() => {
@@ -60,38 +54,50 @@ export default function OrganizationPage() {
             <Building2 className="text-primary size-9.5 sm:size-13" />
           </div>
           <div className="flex flex-col justify-around px-4 py-1">
-            <div className="text-lg font-semibold sm:text-xl">
-              {org?.name ?? "—"}
-            </div>
-            <div className="mt-1 flex flex-col flex-wrap gap-x-2 gap-y-0.5 sm:mt-0 sm:flex-row sm:items-center">
-              <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
-                <User className="sm:size5 size-3.5" />
-                <div>{org?.memberCount ?? "—"} members</div>
+            {isLoading ? (
+              <Skeleton className="h-6 w-40" />
+            ) : (
+              <div className="text-lg font-semibold sm:text-xl">
+                {org?.name}
               </div>
-              <Dot className="text-muted hidden sm:flex" size={20} />
-              <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
-                <Crown className="sm:size5 size-3.5" />
-                <div>
-                  {org?.role
-                    ? org.role.charAt(0) + org.role.slice(1).toLowerCase()
-                    : "—"}
+            )}
+            {isLoading ? (
+              <div className="mt-2 flex flex-wrap gap-3">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            ) : (
+              <div className="mt-1 flex flex-col flex-wrap gap-x-2 gap-y-0.5 sm:mt-0 sm:flex-row sm:items-center">
+                <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
+                  <User className="sm:size5 size-3.5" />
+                  <div>{org?.memberCount} members</div>
+                </div>
+                <Dot className="text-muted hidden sm:flex" size={20} />
+                <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
+                  <Crown className="sm:size5 size-3.5" />
+                  <div>
+                    {org?.role
+                      ? org.role.charAt(0) + org.role.slice(1).toLowerCase()
+                      : "—"}
+                  </div>
+                </div>
+                <Dot className="text-muted hidden sm:flex" size={20} />
+                <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
+                  <Calendar className="sm:size5 size-3.5" />
+                  <div>
+                    Created on{" "}
+                    {org?.createdAt
+                      ? new Date(org.createdAt).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"}
+                  </div>
                 </div>
               </div>
-              <Dot className="text-muted hidden sm:flex" size={20} />
-              <div className="sm:text-md text-muted flex items-center gap-1 text-sm whitespace-nowrap">
-                <Calendar className="sm:size5 size-3.5" />
-                <div>
-                  Created on{" "}
-                  {org?.createdAt
-                    ? new Date(org.createdAt).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
         <div className="mt-5 hidden gap-3 md:flex">
@@ -133,10 +139,13 @@ export default function OrganizationPage() {
 
       {activeTab === "Members" && <MembersTab />}
 
-      <EditOrganizationModal
-        open={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-      />
+      {org && (
+        <EditOrganizationModal
+          org={org}
+          open={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+        />
+      )}
     </div>
   );
 }

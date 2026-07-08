@@ -6,10 +6,9 @@ import {
   SearchIcon,
 } from "lucide-react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getOrganizationMembers } from "../../../api/org";
+import { organizationMembersQueryOptions } from "../../../api/org";
 import type { Member } from "../../../api/org";
 import { useNearBottomScroll } from "../../../hooks/useNearBottomScroll";
-import { withMinDuration } from "../../../utils/withMinDuration";
 
 const PAGE_SIZE = 10;
 
@@ -23,18 +22,7 @@ export default function MembersTab() {
   const [search, setSearch] = useState("");
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
-      queryKey: ["organizationMembers"],
-      queryFn: ({ pageParam }) =>
-        withMinDuration(
-          getOrganizationMembers(pageParam, PAGE_SIZE).then((r) => r.data),
-        ),
-      initialPageParam: 1,
-      getNextPageParam: (lastPage) =>
-        lastPage.page * lastPage.pageSize < lastPage.total
-          ? lastPage.page + 1
-          : undefined,
-    });
+    useInfiniteQuery(organizationMembersQueryOptions(PAGE_SIZE));
 
   const members: Member[] = data?.pages.flatMap((p) => p.members) ?? [];
 
