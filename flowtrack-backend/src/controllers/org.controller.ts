@@ -26,6 +26,19 @@ export const getOrganization = async (req: Request, res: Response) => {
   }
 };
 
+export const updateOrganization = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const organization = await organizationService.updateOrganization(
+      userId,
+      req.body,
+    );
+    sendSuccess(res, "Organization updated successfully", organization);
+  } catch (err) {
+    handleError(err, res);
+  }
+};
+
 export const getOrganizationMembers = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;

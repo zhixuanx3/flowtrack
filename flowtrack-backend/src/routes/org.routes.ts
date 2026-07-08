@@ -6,6 +6,7 @@ const router = Router();
 
 router.post("/", requireAuth, organizationController.createOrganization);
 router.get("/", requireAuth, organizationController.getOrganization);
+router.patch("/", requireAuth, organizationController.updateOrganization);
 router.get(
   "/members",
   requireAuth,
