@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import organizationRoutes from "./routes/org.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import inviteRoutes from "./routes/invite.routes.js";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(cookieParser());
 app.use("/auth", authRoutes);
 app.use("/organizations", organizationRoutes);
 app.use("/organizations/:organizationId/projects", projectRoutes);
+app.use("/invites", inviteRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

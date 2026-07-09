@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { z } from "zod";
 import prisma from "../lib/prisma.js";
 import { MemberRole } from "../generated/prisma/client.js";
+import { generateTokens } from "../utils/tokens.js";
 
 const RegisterSchema = z.object({
   email: z.email(),
@@ -23,27 +24,6 @@ const LoginSchema = z.object({
   email: z.email(),
   password: z.string().min(1),
 });
-
-const generateTokens = async (userId: string, email: string) => {
-  const accessToken = jwt.sign(
-    { userId, email },
-    process.env.JWT_ACCESS_SECRET!,
-    { expiresIn: "15m" },
-  );
-
-  const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET!, {
-    expiresIn: "7d",
-  });
-
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
-
-  await prisma.refreshToken.create({
-    data: { token: refreshToken, userId, expiresAt },
-  });
-
-  return { accessToken, refreshToken };
-};
 
 export const register = async (data: unknown) => {
   const { email, password, name, accountType, orgName } = RegisterSchema.parse(data);

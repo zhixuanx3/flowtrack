@@ -2,13 +2,7 @@ import type { Request, Response } from "express";
 import * as authService from "../services/auth.service.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { handleError } from "../utils/error.js";
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-};
+import { COOKIE_OPTIONS } from "../utils/cookies.js";
 
 export const register = async (req: Request, res: Response) => {
   try {

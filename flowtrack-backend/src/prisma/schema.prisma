@@ -18,6 +18,11 @@ enum ProjectStatus {
   ARCHIVED
 }
 
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+}
+
 model User {
   id              String          @id @default(cuid())
   email           String          @unique
@@ -45,6 +50,7 @@ model Organization {
   createdAt DateTime  @default(now())
   members   User[]    @relation("OrgMembers")
   projects  Project[]
+  invites   Invite[]
 }
 
 model Project {
@@ -69,6 +75,20 @@ model ProjectMember {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, projectId])
+}
+
+model Invite {
+  id             String       @id @default(cuid())
+  email          String
+  role           MemberRole
+  organizationId String
+  token          String       @unique
+  status         InviteStatus @default(PENDING)
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
 }
 
 model RefreshToken {
