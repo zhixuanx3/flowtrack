@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dot,
   Crown,
@@ -7,6 +7,7 @@ import {
   Building2,
   UserRoundPlus,
   Pencil,
+  MoreVertical,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
@@ -21,8 +22,8 @@ import InviteMembersModal from "./members/InviteMembersModal";
 
 const ALL_TABS = [
   { key: "Members", permission: "members:view" },
-  { key: "Roles", permission: "roles:manage" },
-  { key: "Settings", permission: "settings:manage" },
+  // { key: "Roles", permission: "roles:manage" },
+  // { key: "Settings", permission: "settings:manage" },
 ] as const;
 
 export default function OrganizationPage() {
@@ -41,6 +42,20 @@ export default function OrganizationPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMenuOpen]);
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-col gap-1">
@@ -50,7 +65,49 @@ export default function OrganizationPage() {
         </div>
       </div>
 
-      <div className="border-line my-2 rounded-md border bg-white px-4 py-3 sm:my-4 sm:p-6">
+      <div className="border-line relative my-2 rounded-md border bg-white px-4 py-3 sm:my-4 sm:p-6">
+        {(hasPermission(role, "org:edit") ||
+          hasPermission(role, "org:invite")) && (
+          <div className="absolute top-3 right-3 md:hidden" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((v) => !v)}
+              className="hover:bg-surface-secondary cursor-pointer rounded p-1"
+            >
+              <MoreVertical size={20} className="text-muted" />
+            </button>
+            {isMenuOpen && (
+              <div className="border-line shadow-card absolute top-full right-0 z-10 mt-1 w-48 rounded-lg border bg-white py-1">
+                {hasPermission(role, "org:edit") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="hover:bg-surface-secondary flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm"
+                  >
+                    <Pencil size={16} />
+                    Edit Organization
+                  </button>
+                )}
+                {hasPermission(role, "org:invite") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsInviteOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="hover:bg-surface-secondary flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm"
+                  >
+                    <UserRoundPlus size={16} />
+                    Invite Members
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex">
           <div className="bg-primary-light flex size-16 shrink-0 items-center justify-center rounded-xl sm:size-24">
             <Building2 className="text-primary size-9.5 sm:size-13" />
@@ -143,7 +200,7 @@ export default function OrganizationPage() {
         ))}
       </div>
 
-      {activeTab === "Members" && <MembersTab />}
+      {activeTab === "Members" && <MembersTab role={role} />}
 
       {org && (
         <EditOrganizationModal

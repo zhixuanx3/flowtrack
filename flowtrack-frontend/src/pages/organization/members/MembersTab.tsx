@@ -9,6 +9,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { organizationMembersQueryOptions } from "../../../api/org";
 import type { Member } from "../../../api/org";
 import { useNearBottomScroll } from "../../../hooks/useNearBottomScroll";
+import { hasPermission, type MemberRole } from "../../../utils/permissions";
 
 const PAGE_SIZE = 10;
 
@@ -18,7 +19,12 @@ const ROLE_STYLES: Record<string, string> = {
   MEMBER: "bg-surface-secondary text-foreground border border-line",
 };
 
-export default function MembersTab() {
+interface MembersTabProps {
+  role: MemberRole | undefined;
+}
+
+export default function MembersTab({ role }: MembersTabProps) {
+  const canManage = hasPermission(role, "members:manage");
   const [search, setSearch] = useState("");
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
@@ -78,7 +84,7 @@ export default function MembersTab() {
         <table className="w-full table-fixed text-sm">
           <thead className="border-line bg-surface-secondary sticky top-0 border-y">
             <tr>
-              <th className="text-muted w-[55%] py-3 pr-2 pl-3 text-left font-medium sm:pl-4 lg:w-2/5">
+              <th className="text-muted w-[55%] py-3 pr-2 pl-3 text-left font-medium sm:pl-4 lg:w-[35%]">
                 Member
               </th>
               <th className="text-muted w-[30%] px-2 py-3 text-left font-medium sm:px-4 lg:w-1/5">
@@ -90,13 +96,18 @@ export default function MembersTab() {
               <th className="text-muted hidden px-4 py-3 text-left font-medium lg:table-cell lg:w-1/5">
                 Status
               </th>
-              <th className="w-[15%] py-3 pr-3 pl-2 sm:pr-4 lg:w-auto" />
+              {canManage && (
+                <th className="w-[15%] py-3 pr-3 pl-2 sm:pr-4 lg:w-[5%]" />
+              )}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && !isLoading ? (
               <tr>
-                <td colSpan={5} className="text-muted px-4 py-8 text-center">
+                <td
+                  colSpan={canManage ? 5 : 4}
+                  className="text-muted px-4 py-8 text-center"
+                >
                   No members found
                 </td>
               </tr>
@@ -141,14 +152,16 @@ export default function MembersTab() {
                       Active
                     </span>
                   </td>
-                  <td className="py-3 pr-3 pl-2 text-center sm:pr-4">
-                    <button
-                      type="button"
-                      className="hover:bg-surface-secondary cursor-pointer rounded p-1"
-                    >
-                      <MoreVertical size={16} className="text-muted" />
-                    </button>
-                  </td>
+                  {canManage && (
+                    <td className="py-3 pr-3 pl-2 text-center sm:pr-4">
+                      <button
+                        type="button"
+                        className="hover:bg-surface-secondary cursor-pointer rounded p-1"
+                      >
+                        <MoreVertical size={16} className="text-muted" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
