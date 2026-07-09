@@ -11,6 +11,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import OrganizationPage from "./pages/organization/OrganizationPage";
+import AcceptInvitePage from "./pages/invite/AcceptInvitePage";
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -61,6 +62,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/invite/accept" element={<AcceptInvitePage />} />
           <Route
             element={
               <PrivateRoute>

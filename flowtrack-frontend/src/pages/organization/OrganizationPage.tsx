@@ -17,6 +17,7 @@ import { organizationQueryOptions } from "../../api/org";
 import { setOrg } from "../../store/authSlice";
 import { hasPermission, type MemberRole } from "../../utils/permissions";
 import EditOrganizationModal from "./EditOrganizationModal";
+import InviteMembersModal from "./members/InviteMembersModal";
 
 const ALL_TABS = [
   { key: "Members", permission: "members:view" },
@@ -38,6 +39,7 @@ export default function OrganizationPage() {
   const tabs = ALL_TABS.filter((tab) => hasPermission(role, tab.permission));
 
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   return (
     <div className="flex h-full flex-col">
@@ -112,7 +114,11 @@ export default function OrganizationPage() {
             </Button>
           )}
           {hasPermission(role, "org:invite") && (
-            <Button variant="outline" type="button">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setIsInviteOpen(true)}
+            >
               <UserRoundPlus size={16} className="mr-2" />
               Invite Members
             </Button>
@@ -146,6 +152,11 @@ export default function OrganizationPage() {
           onClose={() => setIsEditOpen(false)}
         />
       )}
+
+      <InviteMembersModal
+        open={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+      />
     </div>
   );
 }
