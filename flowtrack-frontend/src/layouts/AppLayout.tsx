@@ -6,8 +6,10 @@ import {
   Menu,
   X,
   Bell,
+  ChevronDown,
+  Folder,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useMutation } from "@tanstack/react-query";
@@ -22,9 +24,47 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const org = useSelector((state: RootState) => state.auth.org);
-  const canViewOrg = hasPermission(org?.role as MemberRole | undefined, "org:view");
+  const user = useSelector((state: RootState) => state.auth.user);
+  const canViewOrg = hasPermission(
+    org?.role as MemberRole | undefined,
+    "org:view",
+  );
   const [collapsed, setCollapsed] = useState(isMobile);
   const [skipTransition, setSkipTransition] = useState(false);
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isProfileOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isProfileOpen]);
+
+  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
+  const mobileProfileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMobileProfileOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        mobileProfileRef.current &&
+        !mobileProfileRef.current.contains(e.target as Node)
+      ) {
+        setIsMobileProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMobileProfileOpen]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -59,6 +99,10 @@ export default function AppLayout() {
 
   const handleLogout = () => logoutMutation.mutate();
 
+  const handleNavClick = () => {
+    if (isMobile()) setCollapsed(true);
+  };
+
   return (
     <div className="flex h-screen flex-col overflow-hidden md:flex-row">
       {/* Mobile-only top header */}
@@ -71,8 +115,26 @@ export default function AppLayout() {
             <Bell size={22} />
             <span className="bg-error absolute -top-1 -right-1 h-2 w-2 rounded-full" />
           </button>
-          <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold">
-            U
+          <div className="relative" ref={mobileProfileRef}>
+            <button
+              onClick={() => setIsMobileProfileOpen((v) => !v)}
+              className="bg-primary flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-sm font-semibold"
+            >
+              {user?.name.charAt(0).toUpperCase()}
+            </button>
+
+            {isMobileProfileOpen && (
+              <div className="border-line shadow-card text-foreground absolute top-full right-0 z-30 mt-2 w-40 rounded-lg border bg-white py-1">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="hover:bg-surface-secondary flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -135,6 +197,7 @@ export default function AppLayout() {
         <nav className="flex flex-1 flex-col gap-1">
           <NavLink
             to="/dashboard"
+            onClick={handleNavClick}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-lg px-3 py-3 transition ${isActive ? "bg-secondary-light font-medium" : ""}`
             }
@@ -150,6 +213,7 @@ export default function AppLayout() {
           {canViewOrg && (
             <NavLink
               to="/organization"
+              onClick={handleNavClick}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-3 transition ${isActive ? "bg-secondary-light font-medium" : ""}`
               }
@@ -162,24 +226,65 @@ export default function AppLayout() {
               </span>
             </NavLink>
           )}
-        </nav>
 
-        <button
-          onClick={handleLogout}
-          className="flex cursor-pointer items-center gap-3 rounded-lg px-1"
-        >
-          <LogOut size={20} className="shrink-0" />
-          <span
-            className={`overflow-hidden transition-all duration-300 ${collapsed ? "max-w-0 opacity-0" : "max-w-xs opacity-100"}`}
+          <NavLink
+            to="/project"
+            onClick={handleNavClick}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-3 py-3 transition ${isActive ? "bg-secondary-light font-medium" : ""}`
+            }
           >
-            Logout
-          </span>
-        </button>
+            <Folder size={20} className="shrink-0" />
+            <span
+              className={`overflow-hidden transition-all duration-300 ${collapsed ? "max-w-0 opacity-0" : "max-w-xs opacity-100"}`}
+            >
+              Project
+            </span>
+          </NavLink>
+        </nav>
       </aside>
 
-      <main className="bg-surface flex flex-1 flex-col overflow-hidden px-5 py-4 sm:p-6">
-        <Outlet />
-      </main>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Desktop topbar */}
+        <div className="border-line bg-surface hidden shrink-0 items-center justify-end gap-5 border-b px-5 py-3 md:flex sm:px-6">
+          <button className="text-muted hover:text-foreground relative cursor-pointer">
+            <Bell size={20} />
+            <span className="bg-error absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-medium text-white">
+              3
+            </span>
+          </button>
+
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setIsProfileOpen((v) => !v)}
+              className="flex cursor-pointer items-center gap-2"
+            >
+              <div className="bg-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white">
+                {user?.name.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm font-medium">{user?.name}</span>
+              <ChevronDown size={16} className="text-muted" />
+            </button>
+
+            {isProfileOpen && (
+              <div className="border-line shadow-card absolute top-full right-0 z-10 mt-2 w-40 rounded-lg border bg-white py-1">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="hover:bg-surface-secondary flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <main className="bg-surface flex flex-1 flex-col overflow-hidden px-5 py-4 sm:p-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

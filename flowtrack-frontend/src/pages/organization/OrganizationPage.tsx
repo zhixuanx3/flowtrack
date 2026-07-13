@@ -19,6 +19,7 @@ import { setOrg } from "../../store/authSlice";
 import { hasPermission, type MemberRole } from "../../utils/permissions";
 import EditOrganizationModal from "./EditOrganizationModal";
 import InviteMembersModal from "./members/InviteMembersModal";
+import PageHeader from "../../components/PageHeader";
 
 const ALL_TABS = [
   { key: "Members", permission: "members:view" },
@@ -58,12 +59,10 @@ export default function OrganizationPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-col gap-1">
-        <div className="text-xl font-bold sm:text-2xl">Organization</div>
-        <div className="sm:text-md text-muted text-sm">
-          Manage your organization's settings and members
-        </div>
-      </div>
+      <PageHeader
+        title="Organization"
+        desc="Manage your organization's settings and members"
+      />
 
       <div className="border-line relative my-2 rounded-md border bg-white px-4 py-3 sm:my-4 sm:p-6">
         {(hasPermission(role, "org:edit") ||

@@ -12,6 +12,8 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import OrganizationPage from "./pages/organization/OrganizationPage";
 import AcceptInvitePage from "./pages/invite/AcceptInvitePage";
+import ProjectPage from "./pages/project/ProjectPage";
+import CreateProjectPage from "./pages/project/CreateProjectPage";
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -39,7 +41,13 @@ function SilentRefresh({ children }: { children: React.ReactNode }) {
         if (!token) return;
         dispatch(setAccessToken(token));
         const { data } = await getProfile();
-        dispatch(setCredentials({ accessToken: token, user: data.user, org: data.org }));
+        dispatch(
+          setCredentials({
+            accessToken: token,
+            user: data.user,
+            org: data.org,
+          }),
+        );
       })
       .finally(() => setReady(true));
   }, [dispatch]);
@@ -72,6 +80,8 @@ export default function App() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/organization" element={<OrganizationPage />} />
+            <Route path="/project" element={<ProjectPage />} />
+            <Route path="/project/new" element={<CreateProjectPage />} />
           </Route>
         </Routes>
       </SilentRefresh>
