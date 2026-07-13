@@ -18,7 +18,14 @@ export const getProjects = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
     const organizationId = req.params.organizationId as string;
-    const projects = await projectService.getProjects(userId, organizationId);
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const projects = await projectService.getProjects(
+      userId,
+      organizationId,
+      page,
+      pageSize,
+    );
     sendSuccess(res, "Success", projects);
   } catch (err) {
     handleError(err, res);

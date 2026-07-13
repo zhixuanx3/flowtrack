@@ -57,13 +57,17 @@ model Project {
   id             String          @id @default(cuid())
   organizationId String
   name           String
+  key            String?
   description    String?
   status         ProjectStatus   @default(ACTIVE)
+  dueDate        DateTime?
   createdById    String
   createdAt      DateTime        @default(now())
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdBy      User            @relation(fields: [createdById], references: [id])
   members        ProjectMember[]
+
+  @@unique([organizationId, key])
 }
 
 model ProjectMember {
